@@ -1,13 +1,15 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { ChevronRight, ChevronLeft, Plus, Trash2, Loader2, CheckCircle2 } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Plus, Trash2, Loader2, CheckCircle2, Upload, X } from 'lucide-react';
 
 interface LotacaoRow { dt_ini: string; dt_fim: string; cnpj: string; setor: string; cargo: string; funcao: string; cbo: string; cod_cat: string; }
 interface ProfRow    { dt_ini: string; dt_fim: string; atividades: string; }
-interface AmbRow     { dt_ini: string; dt_fim: string; tipo: string; fator: string; valor: string; tecnica: string; epc: string; epi: string; ca: string; neutr_risco: string; efic_epi: string; desc_epi: string; }
+interface AmbRow     { dt_ini: string; dt_fim: string; tipo: string; fator: string; intensidade: string; tecnica: string; epc: string; epi: string; ca: string; med_protecao: string; }
 interface RespRow    { dt_ini: string; dt_fim: string; cpf: string; crea: string; nome: string; }
+
+interface Arquivo { tipo: 'pgr' | 'ltcat' | 'ficha_epi'; file: File; }
 
 interface FormState {
   empresa_razao_social: string; empresa_cnpj: string; empresa_cnae: string;
@@ -28,14 +30,13 @@ const INICIAL: FormState = {
   trab_admissao: '', trab_demissao: '', trab_cargo: '',
   lotacao: [{ dt_ini: '', dt_fim: '', cnpj: '', setor: '', cargo: '', funcao: '', cbo: '', cod_cat: '' }],
   prof:    [{ dt_ini: '', dt_fim: '', atividades: '' }],
-  amb:     [{ dt_ini: '', dt_fim: '', tipo: 'F – Físico', fator: '', valor: '', tecnica: '', epc: 'S', epi: 'S', ca: '', neutr_risco: 'S', efic_epi: 'S', desc_epi: '' }],
+  amb:     [{ dt_ini: '', dt_fim: '', tipo: 'F – Físico', fator: 'Ruído', intensidade: '', tecnica: 'NHO-01', epc: 'S', epi: 'S', ca: '', med_protecao: 'S' }],
   resp:    [{ dt_ini: '', dt_fim: '', cpf: '', crea: '', nome: '' }],
   emissao_data: '', rep_cpf: '', rep_nome: '', observacoes: '',
 };
 
 const STEPS = ['Dados Adm.', 'Lotação', 'Profissiografia', 'Reg. Ambientais', 'Responsáveis', 'Emissão'];
 
-// ── Fora do componente para evitar recriação a cada render ──
 const inputCls = "w-full border border-[#cddae8] rounded-md px-3 py-2 text-sm bg-[#fafcff] focus:outline-none focus:border-[#1F4E79] focus:ring-2 focus:ring-[#1F4E79]/10";
 const labelCls = "block text-[11px] font-bold text-[#2a4a6a] uppercase tracking-wide mb-1";
 
@@ -64,6 +65,7 @@ export default function FormularioPPP() {
   const { token } = useParams<{ token: string }>();
   const [step, setStep]       = useState(0);
   const [form, setForm]       = useState<FormState>(INICIAL);
+  const [arquivos, setArquivos] = useState<Arquivo[]>([]);
   const [empresa, setEmpresa] = useState<{ razao_social: string; cnpj: string } | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [enviando, setEnviando]     = useState(false);
@@ -98,11 +100,23 @@ export default function FormularioPPP() {
     });
   }
 
+  function handleArquivo(tipo: Arquivo['tipo'], file: File | null) {
+    if (!file) return;
+    setArquivos(prev => [...prev.filter(a => a.tipo !== tipo), { tipo, file }]);
+  }
+  function removeArquivo(tipo: Arquivo['tipo']) {
+    setArquivos(prev => prev.filter(a => a.tipo !== tipo));
+  }
+
   async function enviar() {
     setEnviando(true);
     const fd = new FormData();
     fd.append('token', token);
     fd.append('dados_ppp', JSON.stringify(form));
+    arquivos.forEach(a => {
+      fd.append('arquivos', a.file);
+      fd.append('tipos', a.tipo);
+    });
     const res = await fetch('/api/ppp', { method: 'POST', body: fd });
     setEnviando(false);
     if (res.ok) { setEnviado(true); }
@@ -112,6 +126,10 @@ export default function FormularioPPP() {
   if (carregando) return <div className="min-h-screen flex items-center justify-center bg-slate-50"><Loader2 className="w-8 h-8 animate-spin text-[#1F4E79]" /></div>;
   if (erro) return <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6"><div className="text-center max-w-sm"><div className="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4"><span className="text-2xl">⚠️</span></div><h2 className="text-lg font-bold text-slate-800 mb-2">Link inválido</h2><p className="text-sm text-slate-500">{erro}</p></div></div>;
   if (enviado) return <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6"><div className="text-center max-w-sm"><CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4" /><h2 className="text-xl font-bold text-slate-800 mb-2">Dados enviados com sucesso!</h2><p className="text-sm text-slate-500">A equipe Opusmed receberá uma notificação e entrará em contato em breve.</p></div></div>;
+
+  const arquivoPGR     = arquivos.find(a => a.tipo === 'pgr');
+  const arquivoLTCAT   = arquivos.find(a => a.tipo === 'ltcat');
+  const arquivoFichaEPI = arquivos.find(a => a.tipo === 'ficha_epi');
 
   return (
     <div className="min-h-screen bg-[#eef2f7] pb-24" style={{fontFamily:"'Segoe UI',Arial,sans-serif"}}>
@@ -208,27 +226,100 @@ export default function FormularioPPP() {
         )}
 
         {step === 3 && (
-          <Card title="⚗️ Registros Ambientais" badge="Campos 14–15">
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs border-collapse">
-                <thead><tr className="bg-[#D6E4F0]">{['Início','Fim','Tipo','Fator','Valor','Técnica','EPC','EPI','Nº C.A.','Neutrl.','Efic. EPI','Desc. EPI',''].map(h => <th key={h} className="border border-[#c0d4e8] px-2 py-1.5 text-left text-[10px] font-bold text-[#1F4E79] uppercase tracking-wide whitespace-nowrap">{h}</th>)}</tr></thead>
-                <tbody>
-                  {form.amb.map((r, i) => (
-                    <tr key={i} className="hover:bg-blue-50/40">
-                      {(['dt_ini','dt_fim'] as const).map(k => <td key={k} className="border border-[#dde8f4] p-0"><input type="date" className="border-none bg-transparent px-2 py-1.5 text-xs w-full outline-none focus:bg-blue-50 min-w-[110px]" value={r[k]} onChange={e => setRow<AmbRow>('amb', i, k, e.target.value)} /></td>)}
-                      <td className="border border-[#dde8f4] p-0"><select className="border-none bg-transparent px-2 py-1.5 text-xs w-full outline-none focus:bg-blue-50 min-w-[100px]" value={r.tipo} onChange={e => setRow<AmbRow>('amb', i, 'tipo', e.target.value)}>{['F – Físico','Q – Químico','B – Biológico'].map(o => <option key={o}>{o}</option>)}</select></td>
-                      {(['fator','valor','tecnica'] as const).map(k => <td key={k} className="border border-[#dde8f4] p-0"><input className="border-none bg-transparent px-2 py-1.5 text-xs w-full outline-none focus:bg-blue-50 min-w-[80px]" value={r[k]} onChange={e => setRow<AmbRow>('amb', i, k, e.target.value)} /></td>)}
-                      {(['epc','epi','neutr_risco','efic_epi'] as const).map(k => <td key={k} className="border border-[#dde8f4] p-0"><select className="border-none bg-transparent px-2 py-1.5 text-xs w-full outline-none focus:bg-blue-50" value={r[k]} onChange={e => setRow<AmbRow>('amb', i, k, e.target.value)}>{['S','N','NA'].map(o => <option key={o}>{o}</option>)}</select></td>)}
-                      <td className="border border-[#dde8f4] p-0"><input className="border-none bg-transparent px-2 py-1.5 text-xs w-full outline-none focus:bg-blue-50 min-w-[80px]" value={r.ca} onChange={e => setRow<AmbRow>('amb', i, 'ca', e.target.value)} placeholder="Nº C.A." /></td>
-                      <td className="border border-[#dde8f4] p-0"><input className="border-none bg-transparent px-2 py-1.5 text-xs w-full outline-none focus:bg-blue-50 min-w-[100px]" value={r.desc_epi} onChange={e => setRow<AmbRow>('amb', i, 'desc_epi', e.target.value)} placeholder="Descrição EPI" /></td>
-                      <td className="border border-[#dde8f4] text-center"><button onClick={() => delRow('amb', i)} className="text-red-500 hover:text-red-700 px-2"><Trash2 className="w-3.5 h-3.5" /></button></td>
+          <div className="space-y-5">
+            <Card title="⚗️ Exposição a Fatores de Risco" badge="Campo 15">
+              <p className="text-[11px] text-amber-700 bg-amber-50 border-l-4 border-amber-400 rounded px-3 py-2 mb-4">
+                <strong className="block mb-1">⚠️ Atenção</strong>
+                Qualquer alteração nos campos 15.2 a 15.8 exige nova linha com período. Para agentes Químicos (Q), informe o nome da substância ativa, não o nome comercial.
+              </p>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-[#D6E4F0]">
+                      {['15.1 INÍCIO','15.1 FIM','15.2 TIPO','15.3 FATOR DE RISCO','15.4 INTENSIDADE/CONC.','15.5 TÉCNICA','15.6 EPC EFICAZ','15.7 EPI EFICAZ','15.8 C.A. EPI','15.9 MED. PROTEÇÃO',''].map(h => (
+                        <th key={h} className="border border-[#c0d4e8] px-2 py-1.5 text-left text-[10px] font-bold text-[#1F4E79] uppercase tracking-wide whitespace-nowrap">{h}</th>
+                      ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {form.amb.map((r, i) => (
+                      <tr key={i} className="hover:bg-blue-50/40">
+                        {(['dt_ini','dt_fim'] as const).map(k => <td key={k} className="border border-[#dde8f4] p-0"><input type="date" className="border-none bg-transparent px-2 py-1.5 text-xs w-full outline-none focus:bg-blue-50 min-w-[110px]" value={r[k]} onChange={e => setRow<AmbRow>('amb', i, k, e.target.value)} /></td>)}
+                        <td className="border border-[#dde8f4] p-0">
+                          <select className="border-none bg-transparent px-2 py-1.5 text-xs w-full outline-none focus:bg-blue-50 min-w-[90px]" value={r.tipo} onChange={e => setRow<AmbRow>('amb', i, 'tipo', e.target.value)}>
+                            {['F – Físico','Q – Químico','B – Biológico'].map(o => <option key={o}>{o}</option>)}
+                          </select>
+                        </td>
+                        <td className="border border-[#dde8f4] p-0"><input className="border-none bg-transparent px-2 py-1.5 text-xs w-full outline-none focus:bg-blue-50 min-w-[100px]" value={r.fator} onChange={e => setRow<AmbRow>('amb', i, 'fator', e.target.value)} placeholder="Ex: Ruído" /></td>
+                        <td className="border border-[#dde8f4] p-0"><input className="border-none bg-transparent px-2 py-1.5 text-xs w-full outline-none focus:bg-blue-50 min-w-[110px]" value={r.intensidade} onChange={e => setRow<AmbRow>('amb', i, 'intensidade', e.target.value)} placeholder="dB(A) ou NA" /></td>
+                        <td className="border border-[#dde8f4] p-0"><input className="border-none bg-transparent px-2 py-1.5 text-xs w-full outline-none focus:bg-blue-50 min-w-[90px]" value={r.tecnica} onChange={e => setRow<AmbRow>('amb', i, 'tecnica', e.target.value)} placeholder="NHO-01" /></td>
+                        {(['epc','epi'] as const).map(k => (
+                          <td key={k} className="border border-[#dde8f4] p-0">
+                            <select className="border-none bg-transparent px-2 py-1.5 text-xs w-full outline-none focus:bg-blue-50" value={r[k]} onChange={e => setRow<AmbRow>('amb', i, k, e.target.value)}>
+                              {['S','N','NA'].map(o => <option key={o}>{o}</option>)}
+                            </select>
+                          </td>
+                        ))}
+                        <td className="border border-[#dde8f4] p-0"><input className="border-none bg-transparent px-2 py-1.5 text-xs w-full outline-none focus:bg-blue-50 min-w-[80px]" value={r.ca} onChange={e => setRow<AmbRow>('amb', i, 'ca', e.target.value)} placeholder="Nº C.A." /></td>
+                        <td className="border border-[#dde8f4] p-0">
+                          <select className="border-none bg-transparent px-2 py-1.5 text-xs w-full outline-none focus:bg-blue-50" value={r.med_protecao} onChange={e => setRow<AmbRow>('amb', i, 'med_protecao', e.target.value)}>
+                            {['S','N','NA'].map(o => <option key={o}>{o}</option>)}
+                          </select>
+                        </td>
+                        <td className="border border-[#dde8f4] text-center"><button onClick={() => delRow('amb', i)} className="text-red-500 hover:text-red-700 px-2"><Trash2 className="w-3.5 h-3.5" /></button></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <button onClick={() => addRow<AmbRow>('amb', { dt_ini:'',dt_fim:'',tipo:'F – Físico',fator:'',intensidade:'',tecnica:'',epc:'S',epi:'S',ca:'',med_protecao:'S' })} className="mt-3 flex items-center gap-1.5 text-[#1F4E79] border border-dashed border-[#1F4E79] px-3 py-1.5 rounded text-xs font-semibold hover:bg-blue-50 transition"><Plus className="w-3.5 h-3.5" /> Adicionar agente de risco</button>
+            </Card>
+
+            {/* Seção de documentos */}
+            <div className="bg-[#4a2c00] text-white rounded-xl overflow-hidden mb-5">
+              <div className="px-5 py-3 flex items-center gap-2.5 text-sm font-bold">
+                📎 Não conseguiu preencher a tabela acima?
+              </div>
+              <div className="px-5 pb-5 bg-[#7a4a10]/30">
+                <p className="text-[12px] text-orange-100">Nossa equipe de Segurança do Trabalho pode preencher por você — basta enviar os documentos abaixo.</p>
+              </div>
             </div>
-            <button onClick={() => addRow<AmbRow>('amb', { dt_ini:'',dt_fim:'',tipo:'F – Físico',fator:'',valor:'',tecnica:'',epc:'S',epi:'S',ca:'',neutr_risco:'S',efic_epi:'S',desc_epi:'' })} className="mt-3 flex items-center gap-1.5 text-[#1F4E79] border border-dashed border-[#1F4E79] px-3 py-1.5 rounded text-xs font-semibold hover:bg-blue-50 transition"><Plus className="w-3.5 h-3.5" /> Adicionar agente</button>
-          </Card>
+
+            <Card title="📄 Documentos de Suporte" badge="Opcional">
+              <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 mb-5 text-xs text-amber-800">
+                <strong className="block mb-1">⚠️ Orientação importante</strong>
+                Caso não possua as informações necessárias para preencher os campos de exposição a fatores de risco, <strong>envie os documentos listados abaixo</strong> para que a equipe da Opusmed realize o preenchimento. Após o envio, entraremos em contato para confirmar o recebimento.
+              </div>
+
+              {[
+                { tipo: 'pgr' as const, label: 'PGR – Programa de Gerenciamento de Riscos', desc: 'Documento mais recente elaborado para a empresa · PDF, DOC ou DOCX', arquivo: arquivoPGR },
+                { tipo: 'ltcat' as const, label: 'LTCAT – Laudo Técnico das Condições Ambientais do Trabalho', desc: 'Laudo ambiental com medições de agentes nocivos · PDF, DOC ou DOCX', arquivo: arquivoLTCAT },
+                { tipo: 'ficha_epi' as const, label: 'Ficha de EPI (se houver)', desc: 'Ficha de controle de entrega de EPIs do trabalhador · PDF, DOC, DOCX ou imagem', arquivo: arquivoFichaEPI },
+              ].map(({ tipo, label, desc, arquivo }) => (
+                <div key={tipo} className="flex items-center justify-between border border-slate-200 rounded-lg px-4 py-3 mb-3">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-800">{label}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">{desc}</p>
+                    {arquivo && <p className="text-xs text-green-600 mt-1 font-medium">✓ {arquivo.file.name}</p>}
+                  </div>
+                  {arquivo ? (
+                    <button onClick={() => removeArquivo(tipo)} className="flex items-center gap-1 text-red-500 hover:text-red-700 text-xs font-semibold border border-red-200 rounded px-2 py-1 ml-4 whitespace-nowrap">
+                      <X className="w-3 h-3" /> Remover
+                    </button>
+                  ) : (
+                    <label className="flex items-center gap-1.5 bg-[#1F4E79] text-white text-xs font-semibold px-3 py-2 rounded-lg cursor-pointer hover:bg-[#163a5f] transition ml-4 whitespace-nowrap">
+                      <Upload className="w-3.5 h-3.5" /> Selecionar arquivo
+                      <input type="file" className="hidden" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" onChange={e => handleArquivo(tipo, e.target.files?.[0] ?? null)} />
+                    </label>
+                  )}
+                </div>
+              ))}
+
+              <p className="text-xs text-slate-400 mt-3 text-center">
+                Se preferir, você também pode enviar os documentos diretamente pelo e-mail <strong>seguranca@opus.med.br</strong> ou pelo WhatsApp informando o seu token de acesso: <strong className="text-[#1F4E79]">{token.slice(0,12).toUpperCase()}</strong>
+              </p>
+            </Card>
+          </div>
         )}
 
         {step === 4 && (
