@@ -315,9 +315,7 @@ export default function FormularioPPP() {
                 </div>
               ))}
 
-              <p className="text-xs text-slate-400 mt-3 text-center">
-                Se preferir, você também pode enviar os documentos diretamente pelo e-mail <strong>seguranca@opus.med.br</strong> ou pelo WhatsApp informando o seu token de acesso: <strong className="text-[#1F4E79]">{token.slice(0,12).toUpperCase()}</strong>
-              </p>
+      
             </Card>
           </div>
         )}
