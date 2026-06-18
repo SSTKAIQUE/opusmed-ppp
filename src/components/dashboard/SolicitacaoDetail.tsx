@@ -7,8 +7,8 @@ import {
   ArrowLeft, Building2, User, Calendar, Paperclip,
   ChevronDown, Loader2, Download, AlertCircle
 } from 'lucide-react';
-import { cn, formatDateTime, formatDate, STATUS_LABELS, STATUS_COLORS } from '@/lib/utils';
-import type { SolicitacaoPPP, Profile, HistoricoAtividade, AgenteNocivo } from '@/types';
+import { cn, formatDateTime, STATUS_LABELS, STATUS_COLORS } from '@/lib/utils';
+import type { SolicitacaoPPP, Profile } from '@/types';
 
 interface Props {
   solicitacao: SolicitacaoPPP;
@@ -34,7 +34,8 @@ export default function SolicitacaoDetail({ solicitacao, membros, currentProfile
   const [erro, setErro]               = useState('');
   const [sucesso, setSucesso]         = useState('');
 
-  const d = solicitacao.dados_ppp;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const d = solicitacao.dados_ppp as any;
 
   async function salvarAlteracoes() {
     setSalvando(true);
@@ -125,98 +126,146 @@ export default function SolicitacaoDetail({ solicitacao, membros, currentProfile
       <div className="grid grid-cols-2 gap-6">
         {/* Identificação da Empresa */}
         <Section title="Identificação da Empresa" icon={Building2}>
-          <Field label="Razão Social"   value={d?.empresa_razao_social} />
-          <Field label="CNPJ"           value={d?.empresa_cnpj} />
-          <Field label="CNAE"           value={d?.empresa_cnae} />
-          <Field label="Grau de Risco"  value={d?.empresa_grau_risco} />
-          <Field label="Endereço"       value={d?.empresa_endereco} />
-          <Field label="CEP"            value={d?.empresa_cep} />
-          <Field label="Cidade/UF"      value={d && `${d.empresa_cidade} / ${d.empresa_uf}`} />
+          <Field label="Razão Social" value={d?.empresa_razao_social} />
+          <Field label="CNPJ"         value={d?.empresa_cnpj} />
+          <Field label="CNAE"         value={d?.empresa_cnae} />
         </Section>
 
         {/* Identificação do Trabalhador */}
         <Section title="Identificação do Trabalhador" icon={User}>
-          <Field label="Nome"           value={d?.trabalhador_nome} />
-          <Field label="CPF"            value={d?.trabalhador_cpf} />
-          <Field label="NIS/PIS/PASEP"  value={d?.trabalhador_nis_pis_pasep} />
-          <Field label="Data Nasc."     value={d?.trabalhador_data_nascimento} />
-          <Field label="Sexo"           value={d?.trabalhador_sexo} />
-          <Field label="Nome da Mãe"    value={d?.trabalhador_nome_mae} />
-          <Field label="CBO"            value={d?.trabalhador_cbo} />
-          <Field label="Função"         value={d?.trabalhador_funcao} />
-          <Field label="Setor"          value={d?.trabalhador_setor} />
+          <Field label="Nome"          value={d?.trab_nome || d?.trabalhador_nome} />
+          <Field label="CPF"           value={d?.trab_cpf || d?.trabalhador_cpf} />
+          <Field label="NIS/PIS/PASEP" value={d?.trab_nis || d?.trabalhador_nis_pis_pasep} />
+          <Field label="Data Nasc."    value={d?.trab_nascimento || d?.trabalhador_data_nascimento} />
+          <Field label="Sexo"          value={d?.trab_sexo || d?.trabalhador_sexo} />
+          <Field label="Nome da Mãe"   value={d?.trab_mae || d?.trabalhador_nome_mae} />
+          <Field label="CBO"           value={d?.trab_cbo || d?.trabalhador_cbo} />
+          <Field label="Cargo"         value={d?.trab_cargo} />
+          <Field label="Função"        value={d?.trab_funcao || d?.trabalhador_funcao} />
+          <Field label="Setor"         value={d?.trab_setor || d?.trabalhador_setor} />
+          <Field label="Admissão"      value={d?.trab_admissao} />
+          <Field label="Demissão"      value={d?.trab_demissao} />
         </Section>
       </div>
 
-      {/* Histórico de Atividades */}
-      {d?.historico_atividades?.length > 0 && (
-        <Section title="Histórico de Atividades Profissionais" icon={Calendar}>
+      {/* Lotação */}
+      {d?.lotacao?.length > 0 && (
+        <Section title="Histórico de Lotação" icon={Calendar}>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs border-collapse">
+              <thead>
+                <tr className="bg-slate-50">
+                  {['Início','Fim','CNPJ','Setor','Cargo','Função','CBO','Cód. CAT'].map(h => (
+                    <th key={h} className="border border-slate-200 px-2 py-2 text-left font-semibold text-slate-500 uppercase text-[10px] tracking-wide whitespace-nowrap">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {d.lotacao.map((r: Record<string, string>, i: number) => (
+                  <tr key={i} className="hover:bg-slate-50/50">
+                    <td className="border border-slate-200 px-2 py-1.5">{r.dt_ini || '—'}</td>
+                    <td className="border border-slate-200 px-2 py-1.5">{r.dt_fim || '—'}</td>
+                    <td className="border border-slate-200 px-2 py-1.5">{r.cnpj || '—'}</td>
+                    <td className="border border-slate-200 px-2 py-1.5">{r.setor || '—'}</td>
+                    <td className="border border-slate-200 px-2 py-1.5">{r.cargo || '—'}</td>
+                    <td className="border border-slate-200 px-2 py-1.5">{r.funcao || '—'}</td>
+                    <td className="border border-slate-200 px-2 py-1.5">{r.cbo || '—'}</td>
+                    <td className="border border-slate-200 px-2 py-1.5">{r.cod_cat || '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Section>
+      )}
+
+      {/* Profissiografia */}
+      {d?.prof?.length > 0 && (
+        <Section title="Descrição das Atividades" icon={Calendar}>
           <div className="space-y-3">
-            {d.historico_atividades.map((h: HistoricoAtividade, i: number) => (
-              <div key={i} className="rounded-lg border border-slate-100 p-3 bg-slate-50">
-                <div className="grid grid-cols-3 gap-2">
-                  <Field label="Período"  value={`${formatDate(h.periodo_inicio)} – ${h.periodo_fim ? formatDate(h.periodo_fim) : 'Atual'}`} />
-                  <Field label="Empresa"  value={h.empresa_nome} />
-                  <Field label="CNPJ"     value={h.cnpj_empresa} />
-                  <Field label="Função"   value={h.funcao} />
-                  <Field label="Setor"    value={h.setor} />
-                  <Field label="CBO"      value={h.cbo} />
-                  <div className="col-span-3">
-                    <Field label="Atividades" value={h.descricao_atividades} />
-                  </div>
-                </div>
+            {d.prof.map((r: Record<string, string>, i: number) => (
+              <div key={i} className="bg-slate-50 rounded-lg p-3">
+                <p className="text-xs text-slate-500 mb-1">{r.dt_ini || '—'} até {r.dt_fim || '—'}</p>
+                <p className="text-sm text-slate-800 whitespace-pre-wrap">{r.atividades || '—'}</p>
               </div>
             ))}
           </div>
         </Section>
       )}
 
-      {/* Agentes Nocivos */}
-      {d?.agentes_nocivos?.length > 0 && (
-        <Section title="Exposição a Agentes Nocivos" icon={AlertCircle}>
-          <div className="space-y-3">
-            {d.agentes_nocivos.map((a: AgenteNocivo, i: number) => (
-              <div key={i} className="rounded-lg border border-slate-100 p-3 bg-slate-50 grid grid-cols-3 gap-2">
-                <Field label="Tipo"         value={String(a.tipo)} />
-                <Field label="Cód. eSocial" value={String(a.codigo_esocial)} />
-                <Field label="Descrição"    value={String(a.descricao)} />
-                <Field label="Valor"        value={String(a.valor_encontrado)} />
-                <Field label="Limite"       value={String(a.limite_tolerancia)} />
-                <Field label="EPI"          value={String(a.epi_descricao)} />
-                <Field label="CA"           value={String(a.epi_ca)} />
-                <Field label="EPC eficaz"   value={a.epc_eficaz ? 'Sim' : 'Não'} />
-                <Field label="EPI eficaz"   value={a.epi_eficaz ? 'Sim' : 'Não'} />
-              </div>
-            ))}
+      {/* Registros Ambientais */}
+      {d?.amb?.length > 0 && (
+        <Section title="Registros Ambientais" icon={AlertCircle}>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs border-collapse">
+              <thead>
+                <tr className="bg-slate-50">
+                  {['Início','Fim','Tipo','Fator','Valor','Técnica','EPC','EPI','C.A.','Neutrl.','Efic. EPI','Desc. EPI'].map(h => (
+                    <th key={h} className="border border-slate-200 px-2 py-2 text-left font-semibold text-slate-500 uppercase text-[10px] tracking-wide whitespace-nowrap">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {d.amb.map((r: Record<string, string>, i: number) => (
+                  <tr key={i} className="hover:bg-slate-50/50">
+                    <td className="border border-slate-200 px-2 py-1.5">{r.dt_ini || '—'}</td>
+                    <td className="border border-slate-200 px-2 py-1.5">{r.dt_fim || '—'}</td>
+                    <td className="border border-slate-200 px-2 py-1.5">{r.tipo || '—'}</td>
+                    <td className="border border-slate-200 px-2 py-1.5">{r.fator || '—'}</td>
+                    <td className="border border-slate-200 px-2 py-1.5">{r.valor || '—'}</td>
+                    <td className="border border-slate-200 px-2 py-1.5">{r.tecnica || '—'}</td>
+                    <td className="border border-slate-200 px-2 py-1.5 text-center">{r.epc || '—'}</td>
+                    <td className="border border-slate-200 px-2 py-1.5 text-center">{r.epi || '—'}</td>
+                    <td className="border border-slate-200 px-2 py-1.5">{r.ca || '—'}</td>
+                    <td className="border border-slate-200 px-2 py-1.5 text-center">{r.neutr_risco || '—'}</td>
+                    <td className="border border-slate-200 px-2 py-1.5 text-center">{r.efic_epi || '—'}</td>
+                    <td className="border border-slate-200 px-2 py-1.5">{r.desc_epi || '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </Section>
       )}
 
       {/* Responsáveis */}
-      <div className="grid grid-cols-2 gap-6">
-        <Section title="Resp. Registros Ambientais" icon={User}>
-          <Field label="Nome"   value={d?.resp_nome} />
-          <Field label="CPF"    value={d?.resp_cpf} />
-          <Field label="Cargo"  value={d?.resp_cargo} />
-          <Field label="CREA/CRM" value={d?.resp_crea_crm} />
-          <Field label="Data"   value={d?.resp_data_elaboracao} />
+      {d?.resp?.length > 0 && (
+        <Section title="Responsáveis pelos Registros" icon={User}>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs border-collapse">
+              <thead>
+                <tr className="bg-slate-50">
+                  {['Início','Fim','CPF','CREA/CRM','Nome'].map(h => (
+                    <th key={h} className="border border-slate-200 px-2 py-2 text-left font-semibold text-slate-500 uppercase text-[10px] tracking-wide">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {d.resp.map((r: Record<string, string>, i: number) => (
+                  <tr key={i} className="hover:bg-slate-50/50">
+                    <td className="border border-slate-200 px-2 py-1.5">{r.dt_ini || '—'}</td>
+                    <td className="border border-slate-200 px-2 py-1.5">{r.dt_fim || '—'}</td>
+                    <td className="border border-slate-200 px-2 py-1.5">{r.cpf || '—'}</td>
+                    <td className="border border-slate-200 px-2 py-1.5">{r.crea || '—'}</td>
+                    <td className="border border-slate-200 px-2 py-1.5">{r.nome || '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </Section>
-        <Section title="Resp. Monitorações Biológicas" icon={User}>
-          <Field label="Nome"   value={d?.resp_bio_nome} />
-          <Field label="CPF"    value={d?.resp_bio_cpf} />
-          <Field label="CRM"    value={d?.resp_bio_crm} />
-          <Field label="Data"   value={d?.resp_bio_data} />
-        </Section>
-      </div>
+      )}
 
-      {/* Representante Legal */}
-      <Section title="Representante Legal" icon={User}>
-        <div className="grid grid-cols-3 gap-2">
-          <Field label="Nome"  value={d?.rep_legal_nome} />
-          <Field label="CPF"   value={d?.rep_legal_cpf} />
-          <Field label="Cargo" value={d?.rep_legal_cargo} />
-        </div>
-      </Section>
+      {/* Emissão */}
+      {(d?.emissao_data || d?.rep_nome || d?.rep_cpf) && (
+        <Section title="Emissão e Representante Legal" icon={User}>
+          <div className="grid grid-cols-3 gap-4">
+            <Field label="Data de Emissão"    value={d?.emissao_data} />
+            <Field label="CPF do Representante" value={d?.rep_cpf} />
+            <Field label="Nome do Representante" value={d?.rep_nome} />
+          </div>
+        </Section>
+      )}
 
       {/* Observações */}
       {d?.observacoes && (
@@ -256,7 +305,6 @@ export default function SolicitacaoDetail({ solicitacao, membros, currentProfile
   );
 }
 
-// ─── Sub-componentes internos ─────────────────────────────────────────────────
 function Section({
   title, icon: Icon, children
 }: { title: string; icon: React.ElementType; children: React.ReactNode }) {
