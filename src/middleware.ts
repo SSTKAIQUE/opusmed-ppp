@@ -1,0 +1,47 @@
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+
+export async function middleware(req: NextRequest) {
+  let res = NextResponse.next({ request: req });
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return req.cookies.getAll();
+        },
+        setAll(toSet: { name: string; value: string; options: CookieOptions }[]) {
+          toSet.forEach(({ name, value }) => req.cookies.set(name, value));
+          res = NextResponse.next({ request: req });
+          toSet.forEach(({ name, value, options }) =>
+            res.cookies.set(name, value, options as Parameters<typeof res.cookies.set>[2])
+          );
+        },
+      },
+    }
+  );
+
+  const { data: { session } } = await supabase.auth.getSession();
+  const { pathname } = req.nextUrl;
+
+  if (pathname.startsWith('/dashboard') && !session) {
+    const url = req.nextUrl.clone();
+    url.pathname = '/auth/login';
+    return NextResponse.redirect(url);
+  }
+
+  if (pathname.startsWith('/auth/login') && session) {
+    const url = req.nextUrl.clone();
+    url.pathname = '/dashboard/solicitacoes';
+    return NextResponse.redirect(url);
+  }
+
+  return res;
+}
+
+export const config = {
+  matcher: ['/dashboard/:path*', '/auth/:path*'],
+};
