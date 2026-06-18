@@ -343,7 +343,7 @@ export default function FormularioPPP() {
         {step === 5 && (
           <Card title="✍️ Emissão e Representante Legal" badge="Campos 17–18">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
-              <Field label="Data de Emissão" required><input type="date" className={inputCls} value={form.emissao_data} onChange={e => set('emissao_data', e.target.value)} /></Field>
+          
               <Field label="CPF do Representante Legal" required><input className={inputCls} value={form.rep_cpf} onChange={e => set('rep_cpf', e.target.value)} placeholder="000.000.000-00" /></Field>
               <Field label="Nome do Representante Legal" required><input className={inputCls} value={form.rep_nome} onChange={e => set('rep_nome', e.target.value)} placeholder="Nome completo" /></Field>
             </div>
