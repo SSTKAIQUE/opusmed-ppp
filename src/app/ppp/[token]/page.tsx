@@ -35,6 +35,31 @@ const INICIAL: FormState = {
 
 const STEPS = ['Dados Adm.', 'Lotação', 'Profissiografia', 'Reg. Ambientais', 'Responsáveis', 'Emissão'];
 
+// ── Fora do componente para evitar recriação a cada render ──
+const inputCls = "w-full border border-[#cddae8] rounded-md px-3 py-2 text-sm bg-[#fafcff] focus:outline-none focus:border-[#1F4E79] focus:ring-2 focus:ring-[#1F4E79]/10";
+const labelCls = "block text-[11px] font-bold text-[#2a4a6a] uppercase tracking-wide mb-1";
+
+function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col gap-1">
+      <label className={labelCls}>{label}{required && <em className="not-italic text-red-600 ml-1">*</em>}</label>
+      {children}
+    </div>
+  );
+}
+
+function Card({ title, badge, children }: { title: string; badge?: string; children: React.ReactNode }) {
+  return (
+    <div className="bg-white rounded-xl shadow-sm overflow-hidden mb-5">
+      <div className="bg-[#1F4E79] text-white px-5 py-3 flex items-center gap-2.5 text-sm font-bold">
+        {title}
+        {badge && <span className="bg-white/10 rounded px-2 py-0.5 text-[11px] font-semibold">{badge}</span>}
+      </div>
+      <div className="p-5">{children}</div>
+    </div>
+  );
+}
+
 export default function FormularioPPP() {
   const { token } = useParams<{ token: string }>();
   const [step, setStep]       = useState(0);
@@ -87,15 +112,6 @@ export default function FormularioPPP() {
   if (carregando) return <div className="min-h-screen flex items-center justify-center bg-slate-50"><Loader2 className="w-8 h-8 animate-spin text-[#1F4E79]" /></div>;
   if (erro) return <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6"><div className="text-center max-w-sm"><div className="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4"><span className="text-2xl">⚠️</span></div><h2 className="text-lg font-bold text-slate-800 mb-2">Link inválido</h2><p className="text-sm text-slate-500">{erro}</p></div></div>;
   if (enviado) return <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6"><div className="text-center max-w-sm"><CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4" /><h2 className="text-xl font-bold text-slate-800 mb-2">Dados enviados com sucesso!</h2><p className="text-sm text-slate-500">A equipe Opusmed receberá uma notificação e entrará em contato em breve.</p></div></div>;
-
-  const inputCls = "w-full border border-[#cddae8] rounded-md px-3 py-2 text-sm bg-[#fafcff] focus:outline-none focus:border-[#1F4E79] focus:ring-2 focus:ring-[#1F4E79]/10";
-  const labelCls = "block text-[11px] font-bold text-[#2a4a6a] uppercase tracking-wide mb-1";
-  const Field = ({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) => (
-    <div className="flex flex-col gap-1">
-      <label className={labelCls}>{label}{required && <em className="not-italic text-red-600 ml-1">*</em>}</label>
-      {children}
-    </div>
-  );
 
   return (
     <div className="min-h-screen bg-[#eef2f7] pb-24" style={{fontFamily:"'Segoe UI',Arial,sans-serif"}}>
@@ -266,18 +282,6 @@ export default function FormularioPPP() {
           {step < STEPS.length - 1 && <button onClick={() => { setStep(s => s + 1); window.scrollTo({top:0,behavior:'smooth'}); }} className="flex items-center gap-1.5 bg-[#1F4E79] text-white font-bold px-4 py-2 rounded-lg text-sm hover:bg-[#163a5f] transition">Próximo <ChevronRight className="w-4 h-4" /></button>}
         </div>
       </div>
-    </div>
-  );
-}
-
-function Card({ title, badge, children }: { title: string; badge?: string; children: React.ReactNode }) {
-  return (
-    <div className="bg-white rounded-xl shadow-sm overflow-hidden mb-5">
-      <div className="bg-[#1F4E79] text-white px-5 py-3 flex items-center gap-2.5 text-sm font-bold">
-        {title}
-        {badge && <span className="bg-white/10 rounded px-2 py-0.5 text-[11px] font-semibold">{badge}</span>}
-      </div>
-      <div className="p-5">{children}</div>
     </div>
   );
 }
