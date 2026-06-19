@@ -16,6 +16,8 @@ interface FormState {
   trab_nome: string; trab_cpf: string; trab_nis: string; trab_nascimento: string;
   trab_sexo: string; trab_mae: string; trab_cbo: string; trab_funcao: string; trab_setor: string;
   trab_admissao: string; trab_demissao: string; trab_cargo: string;
+  trab_br_pdh: string; trab_matricula_esocial: string; trab_regime_revezamento: string;
+  cat_data: string; cat_numero: string;
   lotacao: LotacaoRow[];
   prof: ProfRow[];
   amb: AmbRow[];
@@ -28,6 +30,8 @@ const INICIAL: FormState = {
   trab_nome: '', trab_cpf: '', trab_nis: '', trab_nascimento: '',
   trab_sexo: '', trab_mae: '', trab_cbo: '', trab_funcao: '', trab_setor: '',
   trab_admissao: '', trab_demissao: '', trab_cargo: '',
+  trab_br_pdh: 'Não', trab_matricula_esocial: '', trab_regime_revezamento: '',
+  cat_data: '', cat_numero: '',
   lotacao: [{ dt_ini: '', dt_fim: '', cnpj: '', setor: '', cargo: '', funcao: '', cbo: '', cod_cat: '' }],
   prof:    [{ dt_ini: '', dt_fim: '', atividades: '' }],
   amb:     [{ dt_ini: '', dt_fim: '', tipo: 'F – Físico', fator: 'Ruído', intensidade: '', tecnica: 'NHO-01', epc: 'S', epi: 'S', ca: '', med_protecao: 'S' }],
@@ -165,6 +169,7 @@ export default function FormularioPPP() {
                 <Field label="CNAE" required><input className={inputCls} value={form.empresa_cnae} onChange={e => set('empresa_cnae', e.target.value)} placeholder="Ex: 2869-1/00" /></Field>
               </div>
             </Card>
+
             <Card title="👤 Dados do Trabalhador" badge="Campos 4–11">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="sm:col-span-3"><Field label="Nome do Trabalhador" required><input className={inputCls} value={form.trab_nome} onChange={e => set('trab_nome', e.target.value)} placeholder="Nome completo" /></Field></div>
@@ -179,6 +184,31 @@ export default function FormularioPPP() {
                 <Field label="Setor" required><input className={inputCls} value={form.trab_setor} onChange={e => set('trab_setor', e.target.value)} placeholder="Ex: Produção" /></Field>
                 <Field label="Admissão" required><input type="date" className={inputCls} value={form.trab_admissao} onChange={e => set('trab_admissao', e.target.value)} /></Field>
                 <Field label="Demissão"><input type="date" className={inputCls} value={form.trab_demissao} onChange={e => set('trab_demissao', e.target.value)} /></Field>
+                
+                {/* Campos adicionados e opcionais */}
+                <Field label="BR/PDH (Beneficiário Reabilitado / Deficiente)">
+                  <select className={inputCls} value={form.trab_br_pdh} onChange={e => set('trab_br_pdh', e.target.value)}>
+                    <option value="Não">Não</option>
+                    <option value="Sim">Sim</option>
+                  </select>
+                </Field>
+                <Field label="Matrícula eSocial (Opcional)">
+                  <input className={inputCls} value={form.trab_matricula_esocial} onChange={e => set('trab_matricula_esocial', e.target.value)} placeholder="Ex: eS-12345" />
+                </Field>
+                <Field label="Regime de Revezamento (Opcional)">
+                  <input className={inputCls} value={form.trab_regime_revezamento} onChange={e => set('trab_regime_revezamento', e.target.value)} placeholder="Ex: 12x36, 5x2" />
+                </Field>
+              </div>
+            </Card>
+
+            <Card title="🚨 Comunicação de Acidente de Trabalho (CAT)" badge="Opcional - Campo 14">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Field label="Data de Registro da CAT">
+                  <input type="date" className={inputCls} value={form.cat_data} onChange={e => set('cat_data', e.target.value)} />
+                </Field>
+                <Field label="Número da CAT">
+                  <input className={inputCls} value={form.cat_numero} onChange={e => set('cat_numero', e.target.value)} placeholder="Número do registro da CAT" />
+                </Field>
               </div>
             </Card>
           </div>
@@ -236,7 +266,7 @@ export default function FormularioPPP() {
                 <table className="w-full text-xs border-collapse">
                   <thead>
                     <tr className="bg-[#D6E4F0]">
-                      {['15.1 INÍCIO','15.1 FIM','15.2 TIPO','15.3 FATOR DE RISCO','15.4 INTENSIDADE/CONC.','15.5 TÉCNICA','15.6 EPC EFICAZ','15.7 EPI EFICAZ','15.8 C.A. EPI','15.9 MED. PROTEÇÃO',''].map(h => (
+                      {['15.1 INÍCIO','15.1 FIM','15.2 TIPO','15.3 FATOR DE RISCO','15.4 INTENSIDADE/CONC.','15.5 TÉCNICA','15.6 EPC EFICAZ','15.7 EPI EFICAZ','15.8 C.A. EPI','15.9 REQ. NR-06/09',''].map(h => (
                         <th key={h} className="border border-[#c0d4e8] px-2 py-1.5 text-left text-[10px] font-bold text-[#1F4E79] uppercase tracking-wide whitespace-nowrap">{h}</th>
                       ))}
                     </tr>
@@ -262,8 +292,10 @@ export default function FormularioPPP() {
                         ))}
                         <td className="border border-[#dde8f4] p-0"><input className="border-none bg-transparent px-2 py-1.5 text-xs w-full outline-none focus:bg-blue-50 min-w-[80px]" value={r.ca} onChange={e => setRow<AmbRow>('amb', i, 'ca', e.target.value)} placeholder="Nº C.A." /></td>
                         <td className="border border-[#dde8f4] p-0">
-                          <select className="border-none bg-transparent px-2 py-1.5 text-xs w-full outline-none focus:bg-blue-50" value={r.med_protecao} onChange={e => setRow<AmbRow>('amb', i, 'med_protecao', e.target.value)}>
-                            {['S','N','NA'].map(o => <option key={o}>{o}</option>)}
+                          <select className="border-none bg-transparent px-2 py-1.5 text-xs w-full outline-none focus:bg-blue-50 min-w-[90px]" value={r.med_protecao} onChange={e => setRow<AmbRow>('amb', i, 'med_protecao', e.target.value)}>
+                            <option value="S">Sim (Atente aos requisitos)</option>
+                            <option value="N">Não</option>
+                            <option value="NA">Não se Aplica</option>
                           </select>
                         </td>
                         <td className="border border-[#dde8f4] text-center"><button onClick={() => delRow('amb', i)} className="text-red-500 hover:text-red-700 px-2"><Trash2 className="w-3.5 h-3.5" /></button></td>
@@ -314,8 +346,6 @@ export default function FormularioPPP() {
                   )}
                 </div>
               ))}
-
-      
             </Card>
           </div>
         )}
@@ -343,7 +373,6 @@ export default function FormularioPPP() {
         {step === 5 && (
           <Card title="✍️ Emissão e Representante Legal" badge="Campos 17–18">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
-          
               <Field label="CPF do Representante Legal" required><input className={inputCls} value={form.rep_cpf} onChange={e => set('rep_cpf', e.target.value)} placeholder="000.000.000-00" /></Field>
               <Field label="Nome do Representante Legal" required><input className={inputCls} value={form.rep_nome} onChange={e => set('rep_nome', e.target.value)} placeholder="Nome completo" /></Field>
             </div>
