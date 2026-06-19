@@ -15,6 +15,12 @@ interface Props {
 const STATUS_OPTIONS = ['todos', 'pendente', 'em_andamento', 'concluido', 'cancelado'] as const;
 const POR_PAGINA = 20;
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getNomeWorker(dados: any): string {
+  if (!dados) return '';
+  return (dados.trab_nome || dados.trabalhador_nome || '') as string;
+}
+
 export default function SolicitacoesClient({ solicitacoes, membros, stats }: Props) {
   const [busca, setBusca]               = useState('');
   const [filtroStatus, setFiltroStatus] = useState<string>('todos');
@@ -25,8 +31,7 @@ export default function SolicitacoesClient({ solicitacoes, membros, stats }: Pro
     setPagina(1);
     return solicitacoes.filter(s => {
       const termo = busca.toLowerCase();
-      const ppp = s.dados_ppp as Record<string, string>;
-      const nomeWorker = ppp?.trab_nome?.toLowerCase() || ppp?.trabalhador_nome?.toLowerCase() || '';
+      const nomeWorker = getNomeWorker(s.dados_ppp).toLowerCase();
       const matchBusca =
         !termo ||
         s.empresa?.razao_social.toLowerCase().includes(termo) ||
@@ -114,8 +119,7 @@ export default function SolicitacoesClient({ solicitacoes, membros, stats }: Pro
             </thead>
             <tbody className="divide-y divide-slate-50">
               {paginadas.map(s => {
-                const ppp2 = s.dados_ppp as Record<string, string>;
-                const nomeWorker = ppp2?.trab_nome || ppp2?.trabalhador_nome;
+                const nomeWorker = getNomeWorker(s.dados_ppp);
                 return (
                   <tr key={s.id} className="hover:bg-slate-50/50 transition-colors">
                     <td className="px-5 py-3.5">
