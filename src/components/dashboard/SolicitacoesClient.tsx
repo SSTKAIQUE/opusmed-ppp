@@ -25,10 +25,8 @@ export default function SolicitacoesClient({ solicitacoes, membros, stats }: Pro
     setPagina(1);
     return solicitacoes.filter(s => {
       const termo = busca.toLowerCase();
-      // suporta tanto o campo novo (trab_nome) quanto o antigo (trabalhador_nome)
-      const nomeWorker =
-        s.dados_ppp?.trab_nome?.toLowerCase() ||
-        s.dados_ppp?.trabalhador_nome?.toLowerCase() || '';
+      const ppp = s.dados_ppp as Record<string, string>;
+      const nomeWorker = ppp?.trab_nome?.toLowerCase() || ppp?.trabalhador_nome?.toLowerCase() || '';
       const matchBusca =
         !termo ||
         s.empresa?.razao_social.toLowerCase().includes(termo) ||
@@ -116,7 +114,8 @@ export default function SolicitacoesClient({ solicitacoes, membros, stats }: Pro
             </thead>
             <tbody className="divide-y divide-slate-50">
               {paginadas.map(s => {
-                const nomeWorker = s.dados_ppp?.trab_nome || s.dados_ppp?.trabalhador_nome;
+                const ppp2 = s.dados_ppp as Record<string, string>;
+                const nomeWorker = ppp2?.trab_nome || ppp2?.trabalhador_nome;
                 return (
                   <tr key={s.id} className="hover:bg-slate-50/50 transition-colors">
                     <td className="px-5 py-3.5">
