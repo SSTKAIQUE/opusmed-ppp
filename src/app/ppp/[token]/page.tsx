@@ -257,66 +257,6 @@ export default function FormularioPPP() {
 
         {step === 3 && (
           <div className="space-y-5">
-            <Card title="⚗️ Exposição a Fatores de Risco" badge="Campo 15">
-              <p className="text-[11px] text-amber-700 bg-amber-50 border-l-4 border-amber-400 rounded px-3 py-2 mb-4">
-                <strong className="block mb-1">⚠️ Atenção</strong>
-                Qualquer alteração nos campos 15.2 a 15.8 exige nova linha com período. Para agentes Químicos (Q), informe o nome da substância ativa, não o nome comercial.
-              </p>
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs border-collapse">
-                  <thead>
-                    <tr className="bg-[#D6E4F0]">
-                      {['15.1 INÍCIO','15.1 FIM','15.2 TIPO','15.3 FATOR DE RISCO','15.4 INTENSIDADE/CONC.','15.5 TÉCNICA','15.6 EPC EFICAZ','15.7 EPI EFICAZ','15.8 C.A. EPI','15.9 REQ. NR-06/09',''].map(h => (
-                        <th key={h} className="border border-[#c0d4e8] px-2 py-1.5 text-left text-[10px] font-bold text-[#1F4E79] uppercase tracking-wide whitespace-nowrap">{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {form.amb.map((r, i) => (
-                      <tr key={i} className="hover:bg-blue-50/40">
-                        {(['dt_ini','dt_fim'] as const).map(k => <td key={k} className="border border-[#dde8f4] p-0"><input type="date" className="border-none bg-transparent px-2 py-1.5 text-xs w-full outline-none focus:bg-blue-50 min-w-[110px]" value={r[k]} onChange={e => setRow<AmbRow>('amb', i, k, e.target.value)} /></td>)}
-                        <td className="border border-[#dde8f4] p-0">
-                          <select className="border-none bg-transparent px-2 py-1.5 text-xs w-full outline-none focus:bg-blue-50 min-w-[90px]" value={r.tipo} onChange={e => setRow<AmbRow>('amb', i, 'tipo', e.target.value)}>
-                            {['F – Físico','Q – Químico','B – Biológico'].map(o => <option key={o}>{o}</option>)}
-                          </select>
-                        </td>
-                        <td className="border border-[#dde8f4] p-0"><input className="border-none bg-transparent px-2 py-1.5 text-xs w-full outline-none focus:bg-blue-50 min-w-[100px]" value={r.fator} onChange={e => setRow<AmbRow>('amb', i, 'fator', e.target.value)} placeholder="Ex: Ruído" /></td>
-                        <td className="border border-[#dde8f4] p-0"><input className="border-none bg-transparent px-2 py-1.5 text-xs w-full outline-none focus:bg-blue-50 min-w-[110px]" value={r.intensidade} onChange={e => setRow<AmbRow>('amb', i, 'intensidade', e.target.value)} placeholder="dB(A) ou NA" /></td>
-                        <td className="border border-[#dde8f4] p-0"><input className="border-none bg-transparent px-2 py-1.5 text-xs w-full outline-none focus:bg-blue-50 min-w-[90px]" value={r.tecnica} onChange={e => setRow<AmbRow>('amb', i, 'tecnica', e.target.value)} placeholder="NHO-01" /></td>
-                        {(['epc','epi'] as const).map(k => (
-                          <td key={k} className="border border-[#dde8f4] p-0">
-                            <select className="border-none bg-transparent px-2 py-1.5 text-xs w-full outline-none focus:bg-blue-50" value={r[k]} onChange={e => setRow<AmbRow>('amb', i, k, e.target.value)}>
-                              {['S','N','NA'].map(o => <option key={o}>{o}</option>)}
-                            </select>
-                          </td>
-                        ))}
-                        <td className="border border-[#dde8f4] p-0"><input className="border-none bg-transparent px-2 py-1.5 text-xs w-full outline-none focus:bg-blue-50 min-w-[80px]" value={r.ca} onChange={e => setRow<AmbRow>('amb', i, 'ca', e.target.value)} placeholder="Nº C.A." /></td>
-                        <td className="border border-[#dde8f4] p-0">
-                          <select className="border-none bg-transparent px-2 py-1.5 text-xs w-full outline-none focus:bg-blue-50 min-w-[90px]" value={r.med_protecao} onChange={e => setRow<AmbRow>('amb', i, 'med_protecao', e.target.value)}>
-                            <option value="S">Sim (Atente aos requisitos)</option>
-                            <option value="N">Não</option>
-                            <option value="NA">Não se Aplica</option>
-                          </select>
-                        </td>
-                        <td className="border border-[#dde8f4] text-center"><button onClick={() => delRow('amb', i)} className="text-red-500 hover:text-red-700 px-2"><Trash2 className="w-3.5 h-3.5" /></button></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <button onClick={() => addRow<AmbRow>('amb', { dt_ini:'',dt_fim:'',tipo:'F – Físico',fator:'',intensidade:'',tecnica:'',epc:'S',epi:'S',ca:'',med_protecao:'S' })} className="mt-3 flex items-center gap-1.5 text-[#1F4E79] border border-dashed border-[#1F4E79] px-3 py-1.5 rounded text-xs font-semibold hover:bg-blue-50 transition"><Plus className="w-3.5 h-3.5" /> Adicionar agente de risco</button>
-            </Card>
-
-            {/* Seção de documentos */}
-            <div className="bg-[#4a2c00] text-white rounded-xl overflow-hidden mb-5">
-              <div className="px-5 py-3 flex items-center gap-2.5 text-sm font-bold">
-                📎 Não conseguiu preencher a tabela acima?
-              </div>
-              <div className="px-5 pb-5 bg-[#7a4a10]/30">
-                <p className="text-[12px] text-orange-100">Nossa equipe de Segurança do Trabalho pode preencher por você — basta enviar os documentos abaixo.</p>
-              </div>
-            </div>
-
             <Card title="📄 Documentos de Suporte" badge="Opcional">
               <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 mb-5 text-xs text-amber-800">
                 <strong className="block mb-1">⚠️ Orientação importante</strong>
