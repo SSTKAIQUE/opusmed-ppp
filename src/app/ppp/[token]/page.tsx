@@ -39,7 +39,7 @@ const INICIAL: FormState = {
   emissao_data: '', rep_cpf: '', rep_nome: '', observacoes: '',
 };
 
-const STEPS = ['Dados Adm.', 'Lotação', 'Profissiografia', 'Reg. Ambientais', 'Responsáveis', 'Emissão'];
+const STEPS = ['Dados Adm.', 'Lotação', 'Profissiografia', 'Documentos', 'Emissão'];
 
 const inputCls = "w-full border border-[#cddae8] rounded-md px-3 py-2 text-sm bg-[#fafcff] focus:outline-none focus:border-[#1F4E79] focus:ring-2 focus:ring-[#1F4E79]/10";
 const labelCls = "block text-[11px] font-bold text-[#2a4a6a] uppercase tracking-wide mb-1";
@@ -291,26 +291,6 @@ export default function FormularioPPP() {
         )}
 
         {step === 4 && (
-          <Card title="👷 Responsáveis pelos Registros" badge="Campo 16">
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs border-collapse">
-                <thead><tr className="bg-[#D6E4F0]">{['Início','Fim','CPF','CREA/CRM','Nome',''].map(h => <th key={h} className="border border-[#c0d4e8] px-2 py-1.5 text-left text-[10px] font-bold text-[#1F4E79] uppercase tracking-wide">{h}</th>)}</tr></thead>
-                <tbody>
-                  {form.resp.map((r, i) => (
-                    <tr key={i} className="hover:bg-blue-50/40">
-                      {(['dt_ini','dt_fim'] as const).map(k => <td key={k} className="border border-[#dde8f4] p-0"><input type="date" className="border-none bg-transparent px-2 py-1.5 text-xs w-full outline-none focus:bg-blue-50 min-w-[110px]" value={r[k]} onChange={e => setRow<RespRow>('resp', i, k, e.target.value)} /></td>)}
-                      {(['cpf','crea','nome'] as const).map(k => <td key={k} className="border border-[#dde8f4] p-0"><input className="border-none bg-transparent px-2 py-1.5 text-xs w-full outline-none focus:bg-blue-50 min-w-[100px]" value={r[k]} onChange={e => setRow<RespRow>('resp', i, k, e.target.value)} /></td>)}
-                      <td className="border border-[#dde8f4] text-center"><button onClick={() => delRow('resp', i)} className="text-red-500 hover:text-red-700 px-2"><Trash2 className="w-3.5 h-3.5" /></button></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <button onClick={() => addRow<RespRow>('resp', { dt_ini:'',dt_fim:'',cpf:'',crea:'',nome:'' })} className="mt-3 flex items-center gap-1.5 text-[#1F4E79] border border-dashed border-[#1F4E79] px-3 py-1.5 rounded text-xs font-semibold hover:bg-blue-50 transition"><Plus className="w-3.5 h-3.5" /> Adicionar responsável</button>
-          </Card>
-        )}
-
-        {step === 5 && (
           <Card title="✍️ Emissão e Representante Legal" badge="Campos 17–18">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
               <Field label="CPF do Representante Legal" required><input className={inputCls} value={form.rep_cpf} onChange={e => set('rep_cpf', e.target.value)} placeholder="000.000.000-00" /></Field>
