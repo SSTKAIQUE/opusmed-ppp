@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createBrowserClient } from '@/lib/supabase';
-import { ShieldCheck, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -33,29 +33,47 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-      {/* Decoração de fundo */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-96 h-96 rounded-full bg-navy/5" />
-        <div className="absolute -bottom-40 -left-40 w-96 h-96 rounded-full bg-blue-100/50" />
+    <div className="min-h-screen flex">
+      {/* Painel institucional */}
+      <div className="hidden lg:flex w-[44%] bg-navy-dark relative overflow-hidden flex-col justify-between p-12">
+        <div
+          className="absolute inset-0 opacity-[0.4] pointer-events-none"
+          style={{
+            backgroundImage:
+              'repeating-linear-gradient(115deg, rgba(255,255,255,0.025) 0px, rgba(255,255,255,0.025) 1px, transparent 1px, transparent 64px)',
+          }}
+        />
+        <div className="relative z-10 w-14 h-14 rounded-full border-[1.5px] border-brass-soft flex items-center justify-center text-brass-soft font-serif font-semibold text-xl">
+          OS
+        </div>
+        <div className="relative z-10">
+          <h1 className="font-serif text-white text-[34px] font-semibold leading-tight mb-2.5">
+            Opusmed<br />Segurança do Trabalho
+          </h1>
+          <p className="text-navy-light/80 text-sm leading-relaxed max-w-sm">
+            Plataforma de gestão de Perfil Profissiográfico Previdenciário — emissão,
+            acompanhamento e conformidade centralizados.
+          </p>
+        </div>
+        <div className="relative z-10 border-t border-white/10 pt-4.5">
+          <p className="text-[11.5px] text-[#5C7A91]">
+            <b className="text-[#AABBC7] font-medium">Opusmed Medicina e Segurança do Trabalho</b>
+            {' '}· CNPJ 27.389.598/0001-09
+          </p>
+        </div>
       </div>
 
-      <div className="relative w-full max-w-md">
-        {/* Card */}
-        <div className="card p-8">
-          {/* Logo / Brand */}
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-navy mb-4">
-              <ShieldCheck className="w-7 h-7 text-white" />
-            </div>
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Opusmed SST</h1>
-            <p className="text-sm text-slate-500 mt-1">Sistema de Gestão de PPP</p>
-          </div>
+      {/* Formulário */}
+      <div className="flex-1 flex items-center justify-center bg-white p-4">
+        <div className="w-full max-w-sm">
+          <h2 className="font-serif text-[22px] font-semibold text-ink mb-1.5">Acessar o painel</h2>
+          <p className="text-sm text-slate-500 mb-7">Entre com suas credenciais corporativas.</p>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label htmlFor="email" className="label-base">E-mail</label>
+              <label htmlFor="email" className="block text-[11px] font-semibold uppercase tracking-wide text-slate-500 mb-1.5">
+                E-mail
+              </label>
               <input
                 id="email"
                 type="email"
@@ -64,12 +82,14 @@ export default function LoginPage() {
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 placeholder="seguranca@opus.med.br"
-                className="input-base"
+                className="w-full rounded-md border border-slate-200 bg-slate-50/50 px-3.5 py-3 text-[13.5px] text-ink placeholder:text-slate-400 focus:outline-none focus:border-navy focus:bg-white transition-colors"
               />
             </div>
 
             <div>
-              <label htmlFor="senha" className="label-base">Senha</label>
+              <label htmlFor="senha" className="block text-[11px] font-semibold uppercase tracking-wide text-slate-500 mb-1.5">
+                Senha
+              </label>
               <div className="relative">
                 <input
                   id="senha"
@@ -79,7 +99,7 @@ export default function LoginPage() {
                   value={senha}
                   onChange={e => setSenha(e.target.value)}
                   placeholder="••••••••"
-                  className="input-base pr-10"
+                  className="w-full rounded-md border border-slate-200 bg-slate-50/50 px-3.5 py-3 pr-10 text-[13.5px] text-ink placeholder:text-slate-400 focus:outline-none focus:border-navy focus:bg-white transition-colors"
                 />
                 <button
                   type="button"
@@ -93,24 +113,24 @@ export default function LoginPage() {
             </div>
 
             {erro && (
-              <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+              <div className="rounded-md bg-status-redBg border border-status-red/20 px-4 py-3 text-sm text-status-red">
                 {erro}
               </div>
             )}
 
-            <button type="submit" disabled={carregando} className="btn-primary w-full py-3">
-              {carregando ? (
-                <><Loader2 className="w-4 h-4 animate-spin" /> Entrando...</>
-              ) : (
-                'Entrar'
-              )}
+            <button
+              type="submit"
+              disabled={carregando}
+              className="w-full rounded-md bg-navy text-white py-3 text-[13.5px] font-semibold tracking-wide hover:bg-navy-dark transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
+            >
+              {carregando ? (<><Loader2 className="w-4 h-4 animate-spin" /> Entrando...</>) : 'Entrar'}
             </button>
           </form>
-        </div>
 
-        <p className="text-center text-xs text-slate-400 mt-6">
-          Opusmed Segurança do Trabalho · MTE 45.170/MG
-        </p>
+          <p className="text-center text-[11px] text-slate-400 mt-7">
+            Opusmed Segurança do Trabalho · MTE 45.170/MG
+          </p>
+        </div>
       </div>
     </div>
   );
