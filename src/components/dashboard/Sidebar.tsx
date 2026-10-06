@@ -5,16 +5,17 @@ import { usePathname, useRouter } from 'next/navigation';
 import { ClipboardList, Building2, LogOut } from 'lucide-react';
 import { createBrowserClient } from '@/lib/supabase';
 import { cn } from '@/lib/utils';
+import Avatar from '@/components/ui/Avatar';
 import type { Profile } from '@/types';
 
-interface SidebarProps { profile: Profile; }
+interface SidebarProps { profile: Profile; pendentes?: number; }
 
 const navMain = [
-  { href: '/dashboard/solicitacoes', label: 'Solicitações', icon: ClipboardList },
-  { href: '/dashboard/empresas',     label: 'Empresas',     icon: Building2 },
+  { href: '/dashboard/solicitacoes', label: 'Solicitações', icon: ClipboardList, badge: true },
+  { href: '/dashboard/empresas',     label: 'Empresas',     icon: Building2,     badge: false },
 ];
 
-export default function Sidebar({ profile }: SidebarProps) {
+export default function Sidebar({ profile, pendentes = 0 }: SidebarProps) {
   const pathname = usePathname();
   const router   = useRouter();
   const supabase = createBrowserClient();
@@ -25,63 +26,90 @@ export default function Sidebar({ profile }: SidebarProps) {
     router.refresh();
   }
 
-  const initials = profile.nome.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
-
   return (
-    <aside className="w-[232px] flex-shrink-0 flex flex-col h-full bg-navy-dark">
-      {/* Brand */}
-      <div className="px-[22px] py-6 border-b border-white/[0.08] flex items-center gap-3">
-        <div className="w-[34px] h-[34px] rounded-full border-[1.3px] border-brass-soft flex items-center justify-center flex-shrink-0 text-brass-soft font-serif font-semibold text-[13px]">
-          OS
+    <>
+      {/* Desktop */}
+      <aside className="hidden lg:flex w-[248px] flex-shrink-0 flex-col h-full bg-gradient-to-b from-[#07182c] to-[#0b2545] border-r border-[#0f2f52] px-3.5 py-5 text-[#c7d6e8]">
+        <div className="flex items-center gap-2.5 px-2 pb-7">
+          <div className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-gradient-to-br from-cyan-400 to-cyan-700 text-[13px] font-bold text-[#04202e] shadow-[0_0_18px_rgba(34,211,238,0.35)]">
+            OS
+          </div>
+          <div>
+            <p className="text-sm font-semibold leading-tight text-white">Opusmed SST</p>
+            <p className="text-xs text-[#7f9bb8]">Gestão de PPP</p>
+          </div>
         </div>
-        <div>
-          <p className="text-white font-serif font-semibold text-sm leading-tight">Opusmed SST</p>
-          <p className="text-[9.5px] uppercase tracking-[0.1em] text-navy-light/70 mt-1">Gestão de PPP</p>
-        </div>
-      </div>
 
-      {/* Nav */}
-      <nav className="px-3 pt-[18px]">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.12em] px-2.5 pb-2.5 text-[#3C566B]">Principal</p>
+        <p className="px-2.5 pb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#5f7d9c]">Principal</p>
+        <nav className="space-y-0.5" aria-label="Navegação principal">
+          {navMain.map(item => {
+            const active = pathname.startsWith(item.href);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={active ? 'page' : undefined}
+                className={cn(
+                  'flex items-center gap-2.5 rounded-[9px] px-2.5 py-2.5 text-sm font-medium transition-colors',
+                  active
+                    ? 'bg-gradient-to-r from-cyan-400/15 to-transparent text-white shadow-[inset_2px_0_0_#22d3ee]'
+                    : 'text-[#9fb6cf] hover:bg-white/5 hover:text-white'
+                )}
+              >
+                <item.icon className={cn('h-4 w-4 flex-shrink-0', active && 'text-cyan-400')} strokeWidth={1.8} />
+                {item.label}
+                {item.badge && pendentes > 0 && (
+                  <span className="ml-auto rounded-full bg-cyan-400 px-2 py-0.5 font-mono text-[11px] font-semibold text-[#04202e]">{pendentes}</span>
+                )}
+              </Link>
+            );
+          })}
+        </nav>
+
+        <div className="mt-auto flex items-center gap-2.5 border-t border-white/10 pt-4">
+          <Avatar nome={profile.nome} className="bg-cyan-400/15 text-cyan-300" />
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-semibold leading-tight text-white">{profile.nome}</p>
+            <p className="truncate text-xs capitalize text-[#7f9bb8]">{profile.role}</p>
+          </div>
+          <button
+            onClick={handleLogout}
+            title="Sair"
+            aria-label="Sair"
+            className="rounded-lg p-2 text-[#7f9bb8] transition-colors hover:bg-white/5 hover:text-red-300"
+          >
+            <LogOut className="h-4 w-4" strokeWidth={1.8} />
+          </button>
+        </div>
+      </aside>
+
+      {/* Mobile: barra inferior */}
+      <nav
+        aria-label="Navegação principal"
+        className="fixed inset-x-0 bottom-0 z-40 flex border-t border-[#0f2f52] bg-[#07182c] lg:hidden"
+      >
         {navMain.map(item => {
           const active = pathname.startsWith(item.href);
           return (
             <Link
               key={item.href}
               href={item.href}
+              aria-current={active ? 'page' : undefined}
               className={cn(
-                'flex items-center gap-[11px] px-3 py-2.5 rounded-r text-[13px] font-medium border-l-2 mb-px transition-colors',
-                active
-                  ? 'bg-white/[0.045] text-white border-brass-soft'
-                  : 'text-[#7E96A8] border-transparent hover:text-white/90'
+                'flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-medium',
+                active ? 'text-cyan-400' : 'text-[#9fb6cf]'
               )}
             >
-              <item.icon className={cn('w-[15px] h-[15px] flex-shrink-0', active ? 'opacity-100' : 'opacity-75')} strokeWidth={1.6} />
+              <item.icon className="h-5 w-5" strokeWidth={1.8} />
               {item.label}
             </Link>
           );
         })}
-      </nav>
-
-      {/* Footer */}
-      <div className="mt-auto px-3 pt-4 pb-5 border-t border-white/[0.08]">
-        <div className="flex items-center gap-2.5 px-2 py-2 mb-0.5">
-          <div className="w-7 h-7 rounded-full bg-navy-mid border border-brass-soft flex items-center justify-center text-white text-[10.5px] font-semibold font-mono flex-shrink-0">
-            {initials}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-white text-[12.5px] font-semibold leading-tight truncate">{profile.nome}</p>
-            <p className="text-[10.5px] capitalize truncate text-[#5C7A91]">{profile.role}</p>
-          </div>
-        </div>
-        <button
-          onClick={handleLogout}
-          className="flex w-full items-center gap-2.5 px-2 py-2 rounded text-xs font-medium text-[#5C7A91] hover:text-red-300 hover:bg-red-500/[0.08] transition-colors"
-        >
-          <LogOut className="w-3.5 h-3.5" strokeWidth={1.6} />
+        <button onClick={handleLogout} className="flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-medium text-[#9fb6cf]">
+          <LogOut className="h-5 w-5" strokeWidth={1.8} />
           Sair
         </button>
-      </div>
-    </aside>
+      </nav>
+    </>
   );
 }
