@@ -8,7 +8,7 @@ export async function GET(request: Request) {
   }
 
   const token = new URL(request.url).searchParams.get('token');
-  if (!token || !/^[a-f0-9]{64}$/.test(token)) {
+  if (!token || !/^[A-Za-z0-9-]{16,128}$/.test(token)) {
     return NextResponse.json({ error: 'Link inválido ou expirado.' }, { status: 404 });
   }
 

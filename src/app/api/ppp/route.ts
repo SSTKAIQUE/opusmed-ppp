@@ -18,7 +18,7 @@ const dadosSchema = z
   })
   .passthrough();
 
-const tokenSchema = z.string().regex(/^[a-f0-9]{64}$/);
+const tokenSchema = z.string().regex(/^[A-Za-z0-9-]{16,128}$/);
 
 export async function POST(request: Request) {
   if (!rateLimit(`ppp:${clientIp(request)}`, 10, 10 * 60_000)) {
