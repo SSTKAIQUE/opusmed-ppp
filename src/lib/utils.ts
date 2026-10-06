@@ -73,3 +73,48 @@ export function validateCNPJ(cnpj: string): boolean {
   };
   return calc(d, 12) === d.charAt(12) && calc(d, 13) === d.charAt(13);
 }
+
+/** Escapa HTML para uso seguro em templates de string (PDF, e-mail). */
+export function escapeHtml(value: unknown): string {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/** Escapa recursivamente todas as strings de um objeto/array (dados vindos do formulário público). */
+export function deepEscape<T>(value: T): T {
+  if (typeof value === 'string') return escapeHtml(value) as unknown as T;
+  if (Array.isArray(value)) return value.map(deepEscape) as unknown as T;
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>).map(([k, v]) => [k, deepEscape(v)])
+    ) as T;
+  }
+  return value;
+}
+
+export function onlyDigits(value: string): string {
+  return value.replace(/\D/g, '');
+}
+
+export function validateCPF(cpf: string): boolean {
+  const d = onlyDigits(cpf);
+  if (d.length !== 11 || /^(\d)\1+$/.test(d)) return false;
+  const calc = (len: number) => {
+    let sum = 0;
+    for (let i = 0; i < len; i++) sum += parseInt(d[i]) * (len + 1 - i);
+    const r = (sum * 10) % 11;
+    return r === 10 ? 0 : r;
+  };
+  return calc(9) === parseInt(d[9]) && calc(10) === parseInt(d[10]);
+}
+
+/** Mascara CPF para listagens: 123.***.***-09 */
+export function maskCPF(cpf: string | null | undefined): string {
+  const d = onlyDigits(cpf ?? '');
+  if (d.length !== 11) return cpf ?? '—';
+  return `${d.slice(0, 3)}.***.***-${d.slice(9)}`;
+}

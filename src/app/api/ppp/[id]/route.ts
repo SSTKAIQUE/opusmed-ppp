@@ -1,34 +1,47 @@
 import { NextResponse } from 'next/server';
-import { createServerClient, createAdminClient } from '@/lib/supabase-server';
+import { z } from 'zod';
+import { createAdminClient } from '@/lib/supabase-server';
+import { requireUser, readJson } from '@/lib/auth';
+
+const idSchema = z.string().uuid();
+const bodySchema = z.object({
+  status: z.enum(['pendente', 'em_andamento', 'concluido', 'cancelado']).optional(),
+  responsavel_id: z.string().uuid().nullable().optional(),
+});
 
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const auth = await requireUser();
+  if ('error' in auth) return auth.error;
+
   const { id } = await params;
+  if (!idSchema.safeParse(id).success) {
+    return NextResponse.json({ error: 'ID inválido.' }, { status: 400 });
+  }
 
-  const supabase = await createServerClient();
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
-
-  const body = await request.json();
-  const { status, responsavel_id } = body;
-
-  const VALID_STATUS = ['pendente', 'em_andamento', 'concluido', 'cancelado'];
-  if (status && !VALID_STATUS.includes(status)) {
-    return NextResponse.json({ error: 'Status inválido.' }, { status: 400 });
+  const parsed = bodySchema.safeParse(await readJson(request));
+  if (!parsed.success) {
+    return NextResponse.json({ error: 'Dados inválidos.' }, { status: 400 });
   }
 
   const update: Record<string, unknown> = {};
-  if (status !== undefined)         update.status         = status;
-  if (responsavel_id !== undefined) update.responsavel_id = responsavel_id;
+  if (parsed.data.status !== undefined)         update.status         = parsed.data.status;
+  if (parsed.data.responsavel_id !== undefined) update.responsavel_id = parsed.data.responsavel_id;
+  if (Object.keys(update).length === 0) {
+    return NextResponse.json({ error: 'Nada para atualizar.' }, { status: 400 });
+  }
 
   const admin = createAdminClient();
-  const { error } = await admin
-    .from('solicitacoes_ppp')
-    .update(update)
-    .eq('id', id);
 
+  if (update.responsavel_id) {
+    const { data: resp } = await admin
+      .from('profiles').select('id').eq('id', update.responsavel_id as string).maybeSingle();
+    if (!resp) return NextResponse.json({ error: 'Responsável não encontrado.' }, { status: 400 });
+  }
+
+  const { error } = await admin.from('solicitacoes_ppp').update(update).eq('id', id);
   if (error) {
     console.error('Erro ao atualizar solicitação:', error);
     return NextResponse.json({ error: 'Erro ao atualizar.' }, { status: 500 });

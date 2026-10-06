@@ -20,10 +20,25 @@ export default function LoginPage() {
     setErro('');
     setCarregando(true);
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password: senha });
+    let error: { message: string; status?: number } | null = null;
+    try {
+      ({ error } = await supabase.auth.signInWithPassword({ email, password: senha }));
+    } catch (err) {
+      error = { message: err instanceof Error ? err.message : 'fetch failed' };
+    }
 
     if (error) {
-      setErro('E-mail ou senha incorretos. Verifique suas credenciais.');
+      const msg = error.message.toLowerCase();
+      if (msg.includes('invalid login credentials')) {
+        setErro('E-mail ou senha incorretos. Verifique suas credenciais.');
+      } else if (msg.includes('email not confirmed')) {
+        setErro('E-mail ainda não confirmado. Confirme pelo link enviado ao seu e-mail.');
+      } else if (msg.includes('fetch') || msg.includes('network') || (error.status ?? 0) >= 500 || error.status === 0) {
+        setErro('Não foi possível conectar ao servidor de autenticação. Tente novamente em alguns minutos.');
+      } else {
+        setErro(`Falha ao entrar: ${error.message}`);
+      }
+      console.error('[login]', error);
       setCarregando(false);
       return;
     }

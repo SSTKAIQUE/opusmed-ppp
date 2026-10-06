@@ -24,16 +24,16 @@ export async function middleware(req: NextRequest) {
     }
   );
 
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { user } } = await supabase.auth.getUser();
   const { pathname } = req.nextUrl;
 
-  if (pathname.startsWith('/dashboard') && !session) {
+  if (pathname.startsWith('/dashboard') && !user) {
     const url = req.nextUrl.clone();
     url.pathname = '/auth/login';
     return NextResponse.redirect(url);
   }
 
-  if (pathname.startsWith('/auth/login') && session) {
+  if (pathname.startsWith('/auth/login') && user) {
     const url = req.nextUrl.clone();
     url.pathname = '/dashboard/solicitacoes';
     return NextResponse.redirect(url);

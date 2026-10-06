@@ -12,11 +12,11 @@ export default async function EmpresasPage() {
     .select('*')
     .order('razao_social');
 
-  const { data: sessionData } = await supabase.auth.getSession();
+  const { data: { user } } = await supabase.auth.getUser();
   const { data: profile } = await supabase
     .from('profiles')
     .select('role')
-    .eq('id', sessionData.session!.user.id)
+    .eq('id', user!.id)
     .single();
 
   return (

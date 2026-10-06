@@ -9,8 +9,9 @@ export default async function SolicitacoesPage() {
 
   const { data: solicitacoes } = await supabase
     .from('solicitacoes_ppp')
-    .select(`*, empresa:empresas(*), responsavel:profiles(id, nome, email, role)`)
-    .order('created_at', { ascending: false });
+    .select(`*, empresa:empresas(id, razao_social, cnpj, email_contato, nome_contato), responsavel:profiles(id, nome, email, role)`)
+    .order('created_at', { ascending: false })
+    .limit(1000);
 
   const { data: membros } = await supabase
     .from('profiles')

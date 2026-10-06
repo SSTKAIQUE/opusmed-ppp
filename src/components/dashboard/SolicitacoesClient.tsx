@@ -7,7 +7,7 @@ import {
   AlertTriangle, Building2, Users, Timer,
   ChevronLeft, ChevronRight
 } from 'lucide-react';
-import { cn, formatDateTime, STATUS_LABELS } from '@/lib/utils';
+import { cn, formatDateTime, STATUS_LABELS, maskCPF } from '@/lib/utils';
 import type { SolicitacaoPPP, EstatisticasPainel, Profile } from '@/types';
 
 interface Props {
@@ -63,19 +63,29 @@ export default function SolicitacoesClient({ solicitacoes, membros, stats }: Pro
   const totalPaginas = Math.ceil(filtradas.length / POR_PAGINA);
   const paginadas    = filtradas.slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA);
 
-  const urgentes        = solicitacoes.filter(s => s.status === 'pendente').length;
+  // Urgente = pendente há mais de 3 dias
+  const LIMITE_URGENTE_MS = 3 * 86_400_000;
+  const urgentes = solicitacoes.filter(
+    s => s.status === 'pendente' && Date.now() - new Date(s.created_at).getTime() > LIMITE_URGENTE_MS
+  ).length;
+
+  // Tempo médio de conclusão (dias) = updated_at - created_at das concluídas
+  const concluidas = solicitacoes.filter(s => s.status === 'concluido');
+  const tempoMedio = concluidas.length
+    ? `${(concluidas.reduce((acc, s) => acc + (new Date(s.updated_at).getTime() - new Date(s.created_at).getTime()), 0) / concluidas.length / 86_400_000).toFixed(1)}d`
+    : '—';
   const empresasUnicas  = new Set(solicitacoes.map(s => s.empresa_id)).size;
   const trabalhadores   = solicitacoes.length;
 
   const statCards = [
-    { label: 'Total',         value: stats.total,        icon: FileText,      accent: 'blue',  trend: '↑18%', trendTone: 'up',   sub: 'solicitações' },
+    { label: 'Total',         value: stats.total,        icon: FileText,      accent: 'blue',  trend: '',     trendTone: '',     sub: 'solicitações' },
     { label: 'Pendentes',     value: stats.pendentes,    icon: Clock,         accent: 'amber', trend: '',     trendTone: '',     sub: 'aguardando' },
     { label: 'Em Andamento',  value: stats.em_andamento, icon: RefreshCw,     accent: 'blue',  trend: '',     trendTone: '',     sub: 'com responsável' },
     { label: 'Concluídas',    value: stats.concluidos,   icon: CheckCircle2,  accent: 'green', trend: '',     trendTone: '',     sub: `taxa: ${stats.total ? Math.round(stats.concluidos/stats.total*100) : 0}%` },
-    { label: 'Urgentes',      value: urgentes,           icon: AlertTriangle, accent: 'red',   trend: '',     trendTone: '',     sub: 'prazo crítico' },
+    { label: 'Urgentes',      value: urgentes,           icon: AlertTriangle, accent: 'red',   trend: '',     trendTone: '',     sub: 'pendentes há +3 dias' },
     { label: 'Empresas',      value: empresasUnicas,     icon: Building2,     accent: 'blue',  trend: '',     trendTone: '',     sub: 'ativas' },
     { label: 'Trabalhadores', value: trabalhadores,      icon: Users,         accent: 'blue',  trend: '',     trendTone: '',     sub: 'envolvidos' },
-    { label: 'Tempo Médio',   value: '4.2d',             icon: Timer,         accent: 'blue',  trend: '↓1d',  trendTone: 'down', sub: 'conclusão' },
+    { label: 'Tempo Médio',   value: tempoMedio,icon: Timer,         accent: 'blue',  trend: '',     trendTone: ''    , sub: 'conclusão' },
   ];
 
   const accentBar: Record<string, string> = {
@@ -253,7 +263,7 @@ export default function SolicitacoesClient({ solicitacoes, membros, stats }: Pro
                           <p className="text-[13px] text-slate-800">{nomeWorker || <span className="text-slate-300 italic text-xs">Não informado</span>}</p>
                         </td>
                         <td className="px-[21px] py-[15px]">
-                          <span className="text-xs font-mono text-slate-500">{cpfWorker || '—'}</span>
+                          <span className="text-xs font-mono text-slate-500">{maskCPF(cpfWorker) || '—'}</span>
                         </td>
                         <td className="px-[21px] py-[15px]">
                           {s.responsavel?.nome ? (

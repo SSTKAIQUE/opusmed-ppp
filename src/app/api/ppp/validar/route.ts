@@ -1,20 +1,23 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase-server';
+import { clientIp, rateLimit } from '@/lib/rate-limit';
 
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const token = searchParams.get('token');
+  if (!rateLimit(`validar:${clientIp(request)}`, 30, 10 * 60_000)) {
+    return NextResponse.json({ error: 'Link inválido ou expirado.' }, { status: 404 });
+  }
 
-  if (!token) {
-    return NextResponse.json({ error: 'Token ausente.' }, { status: 400 });
+  const token = new URL(request.url).searchParams.get('token');
+  if (!token || !/^[a-f0-9]{64}$/.test(token)) {
+    return NextResponse.json({ error: 'Link inválido ou expirado.' }, { status: 404 });
   }
 
   const admin = createAdminClient();
-
   const { data: empresa, error } = await admin
     .from('empresas')
     .select('id, razao_social, cnpj')
     .eq('token_link', token)
+    .is('revogado_em', null)
     .single();
 
   if (error || !empresa) {

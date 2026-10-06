@@ -7,7 +7,7 @@ import {
   ArrowLeft, Building2, User, Calendar, Paperclip,
   ChevronDown, Loader2, AlertCircle, FileText, Printer, Download
 } from 'lucide-react';
-import { cn, formatDateTime, STATUS_LABELS, STATUS_COLORS } from '@/lib/utils';
+import { cn, formatDateTime, STATUS_LABELS, STATUS_COLORS, deepEscape } from '@/lib/utils';
 import type { SolicitacaoPPP, Profile } from '@/types';
 
 interface Props {
@@ -25,8 +25,8 @@ const TIPO_ARQUIVO_LABELS: Record<string, string> = {
 
 function gerarPDF(solicitacao: SolicitacaoPPP) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const d = solicitacao.dados_ppp as any;
-  const empresa = solicitacao.empresa;
+  const d = deepEscape(solicitacao.dados_ppp) as any;
+  const empresa = deepEscape(solicitacao.empresa);
 
   const html = `<!DOCTYPE html>
 <html lang="pt-BR">

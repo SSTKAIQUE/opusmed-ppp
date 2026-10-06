@@ -11,7 +11,7 @@ export default async function SolicitacaoPage({ params }: { params: Promise<{ id
 
   const { data } = await supabase
     .from('solicitacoes_ppp')
-    .select(`*, empresa:empresas(*), responsavel:profiles(id, nome, email, role), arquivos:arquivos_ppp(*)`)
+    .select(`*, empresa:empresas(id, razao_social, cnpj, email_contato, nome_contato), responsavel:profiles(id, nome, email, role), arquivos:arquivos_ppp(*)`)
     .eq('id', id)
     .single();
 
@@ -22,11 +22,11 @@ export default async function SolicitacaoPage({ params }: { params: Promise<{ id
     .select('id, nome, email, role')
     .order('nome');
 
-  const { data: sessionData } = await supabase.auth.getSession();
+  const { data: { user } } = await supabase.auth.getUser();
   const { data: profile } = await supabase
     .from('profiles')
     .select('*')
-    .eq('id', sessionData.session!.user.id)
+    .eq('id', user!.id)
     .single();
 
   return (

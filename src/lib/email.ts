@@ -1,14 +1,14 @@
 import { Resend } from 'resend';
 import type { Empresa, SolicitacaoPPP } from '@/types';
-import { formatDateTime } from './utils';
+import { formatDateTime, escapeHtml } from './utils';
 
-const EQUIPE_EMAILS = [
+const EQUIPE_EMAILS = (process.env.EQUIPE_EMAILS?.split(',').map(e => e.trim()).filter(Boolean)) || [
   'seguranca@opus.med.br',
   'seguranca2@opus.med.br',
   'seguranca3@opus.med.br',
 ];
 
-const FROM_EMAIL = 'noreply@opus.med.br'; // configure domínio verificado no Resend
+const FROM_EMAIL = process.env.FROM_EMAIL || 'noreply@opus.med.br'; // domínio verificado no Resend
 
 // ─── Template HTML ────────────────────────────────────────────────────────────
 function templateBase(conteudo: string): string {
@@ -61,7 +61,7 @@ export async function enviarEmailNovaSolicitacao(
   solicitacaoId: string,
   trabalhadorNome: string
 ): Promise<{ success: boolean; error?: string }> {
-  const dashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/solicitacoes/${solicitacaoId}`;
+  const dashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL || ""}/dashboard/solicitacoes/${solicitacaoId}`;
 
   const corpo = `
     <h2 style="margin:0 0 8px;color:#0f172a;font-size:20px;font-weight:700;">
@@ -74,19 +74,19 @@ export async function enviarEmailNovaSolicitacao(
     <table cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;margin-bottom:28px;">
       <tr>
         <td style="padding:10px 14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px 6px 0 0;color:#64748b;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Empresa</td>
-        <td style="padding:10px 14px;background:#f8fafc;border:1px solid #e2e8f0;border-left:none;border-radius:0 6px 0 0;color:#0f172a;font-size:14px;font-weight:600;">${empresa.razao_social}</td>
+        <td style="padding:10px 14px;background:#f8fafc;border:1px solid #e2e8f0;border-left:none;border-radius:0 6px 0 0;color:#0f172a;font-size:14px;font-weight:600;">${escapeHtml(empresa.razao_social)}</td>
       </tr>
       <tr>
         <td style="padding:10px 14px;border:1px solid #e2e8f0;border-top:none;color:#64748b;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">CNPJ</td>
-        <td style="padding:10px 14px;border:1px solid #e2e8f0;border-top:none;border-left:none;color:#0f172a;font-size:14px;">${empresa.cnpj}</td>
+        <td style="padding:10px 14px;border:1px solid #e2e8f0;border-top:none;border-left:none;color:#0f172a;font-size:14px;">${escapeHtml(empresa.cnpj)}</td>
       </tr>
       <tr>
         <td style="padding:10px 14px;background:#f8fafc;border:1px solid #e2e8f0;border-top:none;color:#64748b;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Trabalhador</td>
-        <td style="padding:10px 14px;background:#f8fafc;border:1px solid #e2e8f0;border-top:none;border-left:none;color:#0f172a;font-size:14px;">${trabalhadorNome}</td>
+        <td style="padding:10px 14px;background:#f8fafc;border:1px solid #e2e8f0;border-top:none;border-left:none;color:#0f172a;font-size:14px;">${escapeHtml(trabalhadorNome)}</td>
       </tr>
       <tr>
         <td style="padding:10px 14px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 0 6px;color:#64748b;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Contato</td>
-        <td style="padding:10px 14px;border:1px solid #e2e8f0;border-top:none;border-left:none;border-radius:0 0 6px 0;color:#0f172a;font-size:14px;">${empresa.nome_contato} — ${empresa.email_contato}</td>
+        <td style="padding:10px 14px;border:1px solid #e2e8f0;border-top:none;border-left:none;border-radius:0 0 6px 0;color:#0f172a;font-size:14px;">${escapeHtml(empresa.nome_contato)} — ${escapeHtml(empresa.email_contato)}</td>
       </tr>
     </table>
 
@@ -98,12 +98,13 @@ export async function enviarEmailNovaSolicitacao(
 
   try {
     const resend = new Resend(process.env.RESEND_API_KEY);
-    await resend.emails.send({
+    const { error: sendError } = await resend.emails.send({
       from: FROM_EMAIL,
       to: EQUIPE_EMAILS,
       subject: `[Opusmed PPP] Nova solicitação — ${empresa.razao_social}`,
       html: templateBase(corpo),
     });
+    if (sendError) throw new Error(sendError.message);
     return { success: true };
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Erro desconhecido';
@@ -119,18 +120,18 @@ export async function enviarLinkParaEmpresa(
 ): Promise<{ success: boolean; error?: string }> {
   const corpo = `
     <h2 style="margin:0 0 8px;color:#0f172a;font-size:20px;font-weight:700;">
-      Olá, ${empresa.nome_contato}!
+      Olá, ${escapeHtml(empresa.nome_contato)}!
     </h2>
     <p style="margin:0 0 24px;color:#475569;font-size:15px;line-height:1.6;">
-      A <strong>Opusmed Segurança do Trabalho</strong> enviou um link exclusivo para que você preencha o <strong>Perfil Profissiográfico Previdenciário (PPP)</strong> dos trabalhadores de <em>${empresa.razao_social}</em>.
+      A <strong>Opusmed Segurança do Trabalho</strong> enviou um link exclusivo para que você preencha o <strong>Perfil Profissiográfico Previdenciário (PPP)</strong> dos trabalhadores de <em>${escapeHtml(empresa.razao_social)}</em>.
     </p>
 
     <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:20px;margin-bottom:28px;">
       <p style="margin:0 0 8px;color:#1e3a8a;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Seu link exclusivo</p>
-      <p style="margin:0;color:#1d4ed8;font-size:14px;word-break:break-all;">${link}</p>
+      <p style="margin:0;color:#1d4ed8;font-size:14px;word-break:break-all;">${escapeHtml(link)}</p>
     </div>
 
-    <a href="${link}"
+    <a href="${escapeHtml(link)}"
        style="display:inline-block;background:#1F4E79;color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:8px;font-size:14px;font-weight:600;margin-bottom:28px;">
       Preencher PPP agora →
     </a>
@@ -144,13 +145,14 @@ export async function enviarLinkParaEmpresa(
 
   try {
     const resend = new Resend(process.env.RESEND_API_KEY);
-    await resend.emails.send({
+    const { error: sendError } = await resend.emails.send({
       from: FROM_EMAIL,
       to: empresa.email_contato,
       cc: EQUIPE_EMAILS,
       subject: `Opusmed — Acesse o formulário de PPP da ${empresa.razao_social}`,
       html: templateBase(corpo),
     });
+    if (sendError) throw new Error(sendError.message);
     return { success: true };
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Erro desconhecido';
