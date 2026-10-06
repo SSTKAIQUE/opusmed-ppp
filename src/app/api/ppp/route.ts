@@ -88,10 +88,9 @@ export async function POST(request: Request) {
     .from('empresas')
     .select('*')
     .eq('token_link', token as string)
-    .is('revogado_em', null)
     .single();
 
-  if (empErr || !empresa) {
+  if (empErr || !empresa || empresa.revogado_em) {
     return NextResponse.json({ error: 'Link inválido ou expirado.' }, { status: 404 });
   }
 

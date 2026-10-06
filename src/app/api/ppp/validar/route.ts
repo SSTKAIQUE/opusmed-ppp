@@ -15,14 +15,13 @@ export async function GET(request: Request) {
   const admin = createAdminClient();
   const { data: empresa, error } = await admin
     .from('empresas')
-    .select('id, razao_social, cnpj')
+    .select('*')
     .eq('token_link', token)
-    .is('revogado_em', null)
     .single();
 
-  if (error || !empresa) {
+  if (error || !empresa || empresa.revogado_em) {
     return NextResponse.json({ error: 'Link inválido ou expirado.' }, { status: 404 });
   }
 
-  return NextResponse.json({ empresa });
+  return NextResponse.json({ empresa: { id: empresa.id, razao_social: empresa.razao_social, cnpj: empresa.cnpj } });
 }
