@@ -75,7 +75,6 @@ export default function FormularioPPP() {
   const [enviando, setEnviando]     = useState(false);
   const [enviado, setEnviado]       = useState(false);
   const [erro, setErro]             = useState('');
-  const [consentimento, setConsentimento] = useState(false);
 
   useEffect(() => {
     async function validar() {
@@ -118,16 +117,10 @@ export default function FormularioPPP() {
       alert('Informe o nome e o CPF do trabalhador (etapa "Dados Adm.").');
       return;
     }
-    if (!consentimento) {
-      alert('Marque a ciência sobre o tratamento de dados pessoais para enviar.');
-      return;
-    }
     setEnviando(true);
     const fd = new FormData();
     fd.append('token', token);
-    fd.append('dados_ppp', JSON.stringify(form));
-    fd.append('consentimento', 'true');
-    arquivos.forEach(a => {
+    fd.append('dados_ppp', JSON.stringify(form));    arquivos.forEach(a => {
       fd.append('arquivos', a.file);
       fd.append('tipos', a.tipo);
     });
@@ -310,14 +303,6 @@ export default function FormularioPPP() {
             <div className="bg-[#f4f8fd] border border-[#cddae8] rounded-lg px-4 py-3 text-xs text-[#3a5a7a] leading-relaxed mb-5">
               <strong className="block text-[#1F4E79] font-bold mb-1">Declaração</strong>
               Declaramos, para todos os fins de direito, que as informações prestadas neste documento são verídicas e foram transcritas fielmente dos registros administrativos, das demonstrações ambientais e dos programas médicos de responsabilidade da empresa.
-            </div>
-            <div className="bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-xs text-slate-600 leading-relaxed mb-5">
-              <strong className="block text-slate-800 font-bold mb-1">Tratamento de dados pessoais (LGPD)</strong>
-              Os dados informados (incluindo CPF, NIS, data de nascimento e documentos de saúde e segurança) serão tratados pela Opusmed Medicina e Segurança do Trabalho (CNPJ 27.389.598/0001-09) exclusivamente para elaborar o PPP, em cumprimento de obrigação legal e regulatória, e mantidos pelo prazo exigido pela legislação. Dúvidas ou solicitações do titular: seguranca@opus.med.br.
-              <label className="flex items-start gap-2 mt-3 cursor-pointer text-slate-800 font-medium">
-                <input type="checkbox" className="mt-0.5" checked={consentimento} onChange={e => setConsentimento(e.target.checked)} />
-                <span>Declaro estar autorizado(a) a fornecer estes dados e ciente do tratamento descrito acima.</span>
-              </label>
             </div>
             <div className="bg-[#f0faf4] border-2 border-[#2e8b57] rounded-lg px-5 py-4">
               <p className="text-sm font-bold text-[#1a5c35] mb-3">✅ Tudo preenchido? Envie para a Opusmed revisar.</p>

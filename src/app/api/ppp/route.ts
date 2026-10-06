@@ -40,9 +40,6 @@ export async function POST(request: Request) {
   if (!tokenSchema.safeParse(token).success || typeof dadosPPP !== 'string') {
     return NextResponse.json({ error: 'Dados obrigatórios ausentes.' }, { status: 400 });
   }
-  if (formData.get('consentimento') !== 'true') {
-    return NextResponse.json({ error: 'É necessário confirmar a ciência sobre o tratamento de dados.' }, { status: 400 });
-  }
   if (dadosPPP.length > MAX_DADOS_BYTES) {
     return NextResponse.json({ error: 'Dados muito grandes.' }, { status: 413 });
   }
@@ -109,7 +106,7 @@ export async function POST(request: Request) {
     .insert({
       empresa_id: empresa.id,
       status: 'pendente',
-      dados_ppp: { ...dados, consentimento_lgpd: { aceito: true, em: new Date().toISOString() } },
+      dados_ppp: dados,
     })
     .select()
     .single();
