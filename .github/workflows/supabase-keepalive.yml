@@ -1,0 +1,25 @@
+name: Supabase keep-alive
+
+# O plano Free do Supabase pausa o projeto após ~7 dias sem atividade.
+# Esta rotina faz uma consulta leve ao banco a cada 3 dias para evitar a pausa.
+on:
+  schedule:
+    - cron: '0 11 */3 * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Consulta ao banco
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          status=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 --retry 3 --retry-delay 10 \
+            "$SUPABASE_URL/rest/v1/profiles?select=id&limit=1" \
+            -H "apikey: $SUPABASE_ANON_KEY" \
+            -H "Authorization: Bearer $SUPABASE_ANON_KEY")
+          echo "HTTP $status"
+          # 200 = ok (RLS pode devolver lista vazia, o que já conta como atividade)
+          [ "$status" = "200" ]
