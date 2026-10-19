@@ -24,7 +24,13 @@ export async function middleware(req: NextRequest) {
     }
   );
 
-  const { data: { user } } = await supabase.auth.getUser();
+  // Sem timeout, um Supabase lento/pausado deixa a requisição pendurada até a
+  // Vercel derrubar com 504 (MIDDLEWARE_INVOCATION_TIMEOUT). Em caso de demora
+  // tratamos como "sem sessão": /dashboard vai ao login e /auth/login abre normal.
+  const user = await Promise.race([
+    supabase.auth.getUser().then(({ data }) => data.user).catch(() => null),
+    new Promise<null>((resolve) => setTimeout(() => resolve(null), 4000)),
+  ]);
   const { pathname } = req.nextUrl;
 
   if (pathname.startsWith('/dashboard') && !user) {
