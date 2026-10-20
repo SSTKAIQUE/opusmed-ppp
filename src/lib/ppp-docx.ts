@@ -91,8 +91,14 @@ export function preencherPPP(dados: Dados, empresa: { razao_social?: string; cnp
     subst(6, [data(d.trab_nascimento), sexo, d.trab_matricula_esocial || '', data(d.trab_admissao), d.trab_regime_revezamento || '']);
     subst(9, [data(d.cat_data) || 'N.A', d.cat_numero || 'N.A']);
 
-    const lot = ((d.lotacao ?? []) as Row[]).filter((x) => x.dt_ini || x.cnpj || x.setor || x.cargo || x.funcao)
-      .map((x) => [periodo(x), x.cnpj || '', x.setor || '', x.cargo || '', x.funcao || '', x.cbo || '', x.cod_cat || '']);
+    // Dados do trabalhador servem de reserva quando a linha de lotação veio só com datas
+    const cnpjLot = d.empresa_cnpj || empresa?.cnpj || '';
+    const lotBase = ((d.lotacao ?? []) as Row[]).filter((x) => x.dt_ini || x.cnpj || x.setor || x.cargo || x.funcao);
+    if (lotBase.length === 0) lotBase.push({ dt_ini: d.trab_admissao || '', dt_fim: d.trab_demissao || '' });
+    const lot = lotBase.map((x) => [
+      periodo(x), x.cnpj || cnpjLot, x.setor || d.trab_setor || '', x.cargo || d.trab_cargo || '',
+      x.funcao || d.trab_funcao || '', x.cbo || d.trab_cbo || '', x.cod_cat || '',
+    ]);
     t = trocaLinhas(t, [r[12], r[13]], linhasDe(r[12], lot, 2));
 
     const prof = ((d.prof ?? []) as Row[]).filter((x) => x.dt_ini || x.atividades)
@@ -106,9 +112,10 @@ export function preencherPPP(dados: Dados, empresa: { razao_social?: string; cnp
     let t = novas[1];
     const r = rowsOf(t);
     const amb = ((d.amb ?? []) as Row[]).filter((x) => x.dt_ini || x.fator).map((x) => {
+      const per = periodo(x.dt_ini ? x : { dt_ini: d.trab_admissao || '', dt_fim: x.dt_fim || '' });
       const tipo = (x.tipo || '').split(/[–-]/).pop()?.trim() || '';
       const med = x.med_protecao || '';
-      return [periodo(x), tipo, x.fator || '', x.intensidade || 'NA', x.tecnica || '', x.epc || '', x.epi || '', x.ca || '', med, med, med];
+      return [per, tipo, x.fator || '', x.intensidade || 'NA', x.tecnica || '', x.epc || '', x.epi || '', x.ca || '', med, med, med];
     });
     if (amb.length === 0) amb.push(['', 'Físico', 'Ausencia de agentes nocivos']);
     t = trocaLinhas(t, [r[4], r[5]], linhasDe(r[4], amb, 2));
