@@ -7,6 +7,8 @@ const securityHeaders = [
 ];
 
 const nextConfig = {
+  // modelo Word lido em tempo de execucao pela rota do PPP
+  outputFileTracingIncludes: { '/api/ppp/*/docx': ['./src/templates/ppp-modelo.docx'] },
   async headers() {
     return [
       { source: '/:path*', headers: securityHeaders },
